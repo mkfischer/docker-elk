@@ -1,0 +1,89 @@
+{
+    "id": null,
+    "title": "Metric Simulator Dashboard",
+    "timezone": "browser",
+    "panels": [
+        {
+            "title": "CPU Usage",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "cpu_usage",
+                    "format": "time_series"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 0
+            }
+        },
+        {
+            "title": "HDD Usage",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "hdd_usage",
+                    "format": "time_series"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 0
+            }
+        },
+        {
+            "title": "Memory Usage",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "memory_usage",
+                    "format": "time_series"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 9
+            }
+        },
+        {
+            "title": "HTTP Load",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "http_load",
+                    "format": "time_series"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 9
+            }
+        },
+        {
+            "title": "DB Load",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "db_load",
+                    "format": "time_series"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                    "w": 24,
+                    "x": 0,
+                    "y": 18
+                }
+            }
+        ]
+    },
+    "overwrite": true
+}
