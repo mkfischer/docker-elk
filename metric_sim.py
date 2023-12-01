@@ -1,71 +1,69 @@
-from flask import Flask, Response
-from prometheus_client import Gauge, generate_latest
+from flask import Flask, request, jsonify, render_template_string
+from prometheus_flask_exporter import PrometheusMetrics
+import random
 import time
-import threading
-import json
-import socket
 
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
 
-# Define Prometheus metrics
-g_cpu = Gauge('cpu_usage', 'CPU usage', ['core'])
-g_hdd = Gauge('hdd_usage', 'HDD usage', ['drive'])
-g_memory = Gauge('memory_usage', 'Memory usage')
-g_http = Gauge('http_load', 'HTTP server load')
-g_db = Gauge('db_load', 'Database server load')
+# Define metrics
+cpu_usage = metrics.gauge('cpu_usage', 'CPU usage')
+disk_usage = metrics.gauge('disk_usage', 'Disk usage')
+ram_usage = metrics.gauge('ram_usage', 'RAM usage')
 
-# Initialize metrics
-for i in range(4):
-    g_cpu.labels(core=f'core{i}').set(10)
-g_hdd.labels(drive='drive0').set(10)
-g_memory.set(10)
-g_http.set(10)
-g_db.set(10)
-
-LOGSTASH_HOST = 'logstash'  # Replace with your Logstash host
-LOGSTASH_PORT = 50000
+# Define the metrics values dictionary
+metrics_values = {
+    'cpu_usage': 0,
+    'disk_usage': 0,
+    'ram_usage': 0,
+    'running': False
+}
 
 
-def send_to_logstash():
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((LOGSTASH_HOST, LOGSTASH_PORT))
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    # The HTML content is directly embedded in the script.
+    html_content = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Metrics Simulation</title>
+    </head>
+    <body>
+        <h1>Metrics Simulation</h1>
+        <h2>Status: {{ status }}</h2>
+        <form method="post">
+            <input type="submit" name="action" value="start">
+            <input type="submit" name="action" value="end">
+        </form>
+    </body>
+    </html>
+    '''
 
-    while True:
-        data = {
-            "cpu_usage": [g_cpu.labels(core=f'core{i}')._value.get() for i in range(4)],
-            "hdd_usage": g_hdd.labels(drive='drive0')._value.get(),
-            "memory_usage": g_memory._value.get(),
-            "http_load": g_http._value.get(),
-            "db_load": g_db._value.get()
-        }
-        message = json.dumps(data) + "\n"  # JSON Lines format
-        client_socket.sendall(message.encode('utf-8'))
-        time.sleep(15)  # Adjust the sleep time as needed
+    if request.method == 'POST':
+        action = request.form['action']
+        if action == 'start':
+            # Increase metrics to random values between 80 and 100%
+            metrics_values['cpu_usage'] = random.randint(80, 100)
+            metrics_values['disk_usage'] = random.randint(80, 100)
+            metrics_values['ram_usage'] = random.randint(80, 100)
+            metrics_values['running'] = True
+            return render_template_string(html_content, status='Running')
+        elif action == 'end':
+            # Decrease metrics to 0
+            metrics_values['cpu_usage'] = 0
+            metrics_values['disk_usage'] = 0
+            metrics_values['ram_usage'] = 0
+            metrics_values['running'] = False
+            return render_template_string(html_content, status='Stopped')
+
+    return render_template_string(html_content, status='')
 
 
-def increase_load():
-    load_value = 10
-    while load_value <= 110:
-        for i in range(4):
-            g_cpu.labels(core=f'core{i}').set(load_value)
-        g_hdd.labels(drive='drive0').set(load_value)
-        g_memory.set(load_value)
-        g_http.set(load_value)
-        g_db.set(load_value)
-
-        load_value += 2
-        time.sleep(6)
-
-
-# Start the load increase and Logstash sending in separate threads
-threading.Thread(target=increase_load).start()
-threading.Thread(target=send_to_logstash).start()
-
-
-@app.route('/metrics')
-def metrics():
-    return Response(generate_latest(), mimetype='text/plain')
+@app.route('/metrics', methods=['GET'])
+def get_metrics():
+    return jsonify(metrics_values)
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=9123)
+    app.run(debug=True, port=5555)

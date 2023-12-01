@@ -111,7 +111,8 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "9123:9123"
+      - 9123:9123
+      - 5555:5555
     depends_on:
       - elasticsearch
     networks:
