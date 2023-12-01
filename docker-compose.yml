@@ -106,6 +106,44 @@ services:
       - elasticsearch
     restart: unless-stopped
 
+  synthetic-data:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9123:9123"
+    depends_on:
+      - elasticsearch
+    networks:
+      - elk
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - elk
+    depends_on:
+      - synthetic-data
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - elk
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=turtles
+    volumes:
+      - ./prometheus-datasource.yml:/etc/grafana/provisioning/datasources/prometheus-datasource.yml
+      - ./metric_sim_dashboard.json:/var/lib/grafana/dashboards/metric_sim_dashboard.json
+      - ./dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+    depends_on:
+      - prometheus
+
 networks:
   elk:
     driver: bridge
