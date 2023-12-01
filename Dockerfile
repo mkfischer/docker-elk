@@ -7,6 +7,8 @@ WORKDIR /app
 # Install dependencies
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+RUN apt update -y
+RUN apt install netcat-traditional -y
 
 # Copy the python script
 COPY metric_sim.py ./
